@@ -7,9 +7,9 @@ function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
-  const [location, setLocation] = useState('');
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [location, setLocation] = useState('');
+  // const [error, setError] = useState(null);
+  // const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   const apiKey = '55393e9aa13347b7982180944251802';
@@ -50,8 +50,6 @@ function App() {
 
   const fetchWeatherData = async (location) => {
     try {
-      setIsLoading(true);
-      setError(null);
 
       const weatherRes = await fetch(
         `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${location}&aqi=no`
@@ -65,11 +63,8 @@ function App() {
 
       setWeatherData(weatherData);
       setForecastData(forecastData);
-      setLocation(weatherData.location.name); // Update location name
     } catch (err) {
-      setError('Failed to fetch weather data');
     } finally {
-      setIsLoading(false);
     }
   };
 
@@ -79,7 +74,6 @@ function App() {
   };
 
   const handleSelectSuggestion = (selectedLocation) => {
-    setLocation(selectedLocation.name);
     setInput(selectedLocation.name);
     setSuggestions([]);
     fetchWeatherData(selectedLocation.name);
@@ -91,7 +85,7 @@ function App() {
 
   if (!weatherData || !forecastData) return <p>Loading...</p>;
 
-  const { temp_c, temp_f, humidity, wind_kph, condition } = weatherData.current;
+  const { temp_c, humidity, wind_kph, condition } = weatherData.current;
 
   return (
     <div className={`App ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
