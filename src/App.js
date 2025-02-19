@@ -12,7 +12,7 @@ function App() {
   // const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
-  const apiKey = '55393e9aa13347b7982180944251802';
+  const apiKey = 'your api key';
 
   // Fetch user's current location on app load
   useEffect(() => {
