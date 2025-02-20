@@ -1,5 +1,12 @@
 import './App.css';
 import React, { useState, useEffect } from 'react';
+import sun from './assets/sun.jpg'
+import snow from './assets/snow.jpg'
+import clouds from './assets/clouds.jpg'
+import rain from './assets/rain.jpg'
+import defoult from './assets/defoult-1.jpg'
+import clear from './assets/clear.jpg'
+import mist from './assets/mist.jpg'
 
 function App() {
   const [input, setInput] = useState('');
@@ -7,47 +14,11 @@ function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
-  // const [location, setLocation] = useState('');
-  // const [error, setError] = useState(null);
-  // const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
-  const apiKey = 'your api key';
+  const apiKey = '55393e9aa13347b7982180944251802';
 
   // Fetch user's current location on app load
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          fetchWeatherData(`${latitude},${longitude}`);
-        },
-        (err) => {
-          console.error('Error fetching location:', err);
-          fetchWeatherData('Dhaka,Bangladesh'); // Fallback to Dhaka
-        }
-      );
-    } else {
-      fetchWeatherData('Dhaka,Bangladesh'); // Fallback to Dhaka
-    }
-  }, []);
-
-  const fetchSuggestions = async (query) => {
-    if (query.length < 3) return;
-    setIsSearching(true);
-    try {
-      const response = await fetch(
-        `https://api.weatherapi.com/v1/search.json?key=${apiKey}&q=${query}`
-      );
-      const data = await response.json();
-      setSuggestions(data);
-    } catch (err) {
-      console.error('Error fetching suggestions:', err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
   const fetchWeatherData = async (location) => {
     try {
 
@@ -67,6 +38,38 @@ function App() {
     } finally {
     }
   };
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchWeatherData(`${latitude},${longitude}`);
+        },
+        (err) => {
+          console.error('Error fetching location:', err);
+          fetchWeatherData('Warsaw, Poland'); // Fallback to Dhaka
+        }
+      );
+    } else {
+      fetchWeatherData('Warsaw, Poland'); // Fallback to Dhaka
+    }
+  }, []);
+
+  const fetchSuggestions = async (query) => {
+    if (query.length < 3) return;
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://api.weatherapi.com/v1/search.json?key=${apiKey}&q=${query}`
+      );
+      const data = await response.json();
+      setSuggestions(data);
+    } catch (err) {
+      console.error('Error fetching suggestions:', err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
@@ -74,7 +77,7 @@ function App() {
   };
 
   const handleSelectSuggestion = (selectedLocation) => {
-    setInput(selectedLocation.name);
+    setInput('');
     setSuggestions([]);
     fetchWeatherData(selectedLocation.name);
   };
@@ -82,13 +85,42 @@ function App() {
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
-
-  if (!weatherData || !forecastData) return <p>Loading...</p>;
+  const getBackgroundImage = (weather) => {
+    if (!weather) return defoult;
+  
+    const lowerWeather = weather.toLowerCase();
+  
+    if (lowerWeather.includes("clear")) return clear;
+    if (lowerWeather.includes("rain") || lowerWeather.includes("drizzle")) return rain;
+    if (lowerWeather.includes("cloud")) return clouds;
+    if (lowerWeather.includes("snow")) return snow;
+    if (lowerWeather.includes("sun")) return sun;
+    if (lowerWeather.includes("mist") || lowerWeather.includes("fog")) return mist;
+  
+    return defoult; // Default fallback image
+  };
+  
+  if (!weatherData || !weatherData.current || !forecastData) {
+    return <p className='error'>Error fetching weather data. Please check the API key and try again !</p>;
+  };
+  // if (!weatherData || !forecastData) return <p>Loading...</p>;
 
   const { temp_c, humidity, wind_kph, condition } = weatherData.current;
-
+  
+  const backgroundImage = getBackgroundImage(condition.text);
+  console.log(condition.text)
+  
   return (
     <div className={`App ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
+      <div className='container'
+        style={{
+          background: `url(${backgroundImage}) no-repeat center center/cover`,
+          maxWidth: '1200px',
+          margin: '30px auto',
+          padding: '36px',
+          borderRadius: '15px',
+        }} 
+      >
       <div className="SearchBar">
         <div className="DarkModeToggle">
           <button className="DarkModeToggleButton" onClick={toggleDarkMode}>
@@ -101,12 +133,18 @@ function App() {
             value={input}
             onChange={handleInputChange}
             placeholder="Search for a city..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && suggestions.length > 0) {
+                handleSelectSuggestion(suggestions[0]); // Select first suggestion if Enter is pressed
+                setInput(""); 
+              }
+            }}
           />
           {isSearching && <div className="spinner"></div>}
           {suggestions.length > 0 && (
             <ul className="suggestions-list">
               {suggestions.map((location) => (
-                <li key={location.id} onClick={() => handleSelectSuggestion(location)}>
+                <li key={location.id} onClick={() => handleSelectSuggestion(location)} >
                   {location.name}, {location.country}
                 </li>
               ))}
@@ -116,8 +154,9 @@ function App() {
       </div>
 
       <div className="weather-info">
-        <h2>Today's Weather Forecast</h2>
+        <h2>Today's Weather in {weatherData.location.name}</h2>
         <img src={condition.icon} alt={condition.text} />
+        <p>{condition.text}</p>
         <p className="location-time">
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}, {new Date().toLocaleTimeString()}
         </p>
@@ -127,10 +166,10 @@ function App() {
           <p className="feels-like">Feels like {temp_c}°C</p>
         </div>
         <div className="weather-stats">
-          <p> Temperature: {temp_c}°C</p>
-          <p> Wind: {wind_kph} km/h</p>
-          <p> Humidity: {humidity}%</p>
-          <p> Condition: {condition.text}</p>
+          <p>🌡 Temperature: {temp_c}°C</p>
+          <p>🌬 Wind: {wind_kph} km/h</p>
+          <p> 💨Humidity: {humidity}%</p>
+          <p> ⛅️Condition: {condition.text}</p>
         </div>
       </div>
 
@@ -154,6 +193,7 @@ function App() {
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );
